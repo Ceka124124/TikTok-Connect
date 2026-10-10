@@ -1,0 +1,18 @@
+{
+  "name": "Admin",
+  "templateId": "nodejs_express",
+  "useTypeScript": false,
+  "devServerCommand": "npm start",
+  "scripts": {
+    "dev": "npm start"
+  },
+  "agent": {
+    "profile": "light",
+    "planApproval": true,
+    "askUser": true
+  },
+  "git": {
+    "repo": "Ceka124124/TikTok-Connect",
+    "branch": "main"
+  }
+}

@@ -1,0 +1,326 @@
+/* public/dash.js — TikTok Live Panel istemcisi */
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+const el = {
+  user: $("username"), connect: $("btnConnect"), disconnect: $("btnDisconnect"),
+  quick: $("quickTags"), feed: $("feed"), empty: $("feedEmpty"),
+  filters: $("filters"), board: $("board"), autoScroll: $("autoScroll"),
+  clear: $("btnClear"), connInfo: $("connInfo"),
+  stStatus: $("stStatus"), stRoom: $("stRoom"), stViewers: $("stViewers"), stClients: $("stClients"),
+  serverDot: $("serverDot"), serverText: $("serverText"),
+};
+
+const S = {
+  es: null,
+  username: "",
+  stats: {},
+  filters: new Set(["chat", "gift", "like", "follow", "share", "member", "system"]),
+  seen: 0,
+};
+
+const TYPES = [
+  { k: "chat", ico: "💬", label: "Sohbet" },
+  { k: "gift", ico: "🎁", label: "Hediye" },
+  { k: "like", ico: "❤️", label: "Beğeni" },
+  { k: "follow", ico: "➕", label: "Takip" },
+  { k: "share", ico: "🔗", label: "Paylaşım" },
+  { k: "member", ico: "🚪", label: "Katılım" },
+  { k: "system", ico: "⚙️", label: "Sistem" },
+];
+
+const num = (n) => (typeof n === "number" ? n.toLocaleString("tr-TR") : "0");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const time = (t) => new Date(t || Date.now()).toLocaleTimeString("tr-TR");
+
+/* ---------- FİLTRELER ---------- */
+function buildFilters() {
+  el.filters.innerHTML = "";
+  const all = document.createElement("button");
+  all.className = "chip on";
+  all.textContent = "Tümü";
+  all.onclick = () => {
+    S.filters = new Set(TYPES.map((t) => t.k));
+    [...el.filters.children].forEach((c) => c.classList.add("on"));
+    renderFeedVisibility();
+  };
+  el.filters.appendChild(all);
+
+  TYPES.forEach((t) => {
+    const b = document.createElement("button");
+    b.className = "chip on";
+    b.dataset.k = t.k;
+    b.textContent = `${t.ico} ${t.label}`;
+    b.onclick = () => {
+      if (S.filters.has(t.k)) S.filters.delete(t.k);
+      else S.filters.add(t.k);
+      b.classList.toggle("on");
+      renderFeedVisibility();
+    };
+    el.filters.appendChild(b);
+  });
+}
+
+function renderFeedVisibility() {
+  [...el.feed.children].forEach((node) => {
+    if (!node.dataset.k) return;
+    node.style.display = S.filters.has(node.dataset.k) ? "" : "none";
+  });
+}
+
+/* ---------- OLAY KARTI ---------- */
+function addEvent(name, data) {
+  if (el.empty) el.empty.remove();
+
+  const meta = TYPES.find((t) => t.k === name);
+  const isSys = !meta;
+  const kind = isSys ? "system" : name;
+
+  const node = document.createElement("div");
+  node.className = `ev ${kind}`;
+  node.dataset.k = kind;
+  node.style.display = S.filters.has(kind) ? "" : "none";
+
+  const user = data.user || {};
+  const who = user.uniqueId ? `@${esc(user.uniqueId)}` : "";
+  const nick = user.nickname ? esc(user.nickname) : "";
+
+  let text = "";
+  let extra = "";
+
+  if (name === "chat") text = esc(data.comment ?? "");
+  else if (name === "gift") {
+    text = `${esc(data.giftName ?? "Hediye")} ×${num(data.repeatCount ?? 1)}`;
+    extra = `💎 ${num((data.diamondCount ?? 0) * (data.repeatCount ?? 1))}`;
+  } else if (name === "like") text = `+${num(data.likeCount ?? 1)} beğeni (toplam ${num(data.totalLikeCount ?? 0)})`;
+  else if (name === "follow") text = "takip etti";
+  else if (name === "share") text = "paylaştı";
+  else if (name === "member") text = "yayına katıldı";
+  else if (name === "room_user") text = `👀 ${num(data.viewerCount ?? 0)} izleyici`;
+  else if (name === "connected") text = `Bağlantı kuruldu${data.roomId ? ` · Oda ${esc(data.roomId)}` : ""}`;
+  else if (name === "disconnected") text = "Bağlantı kesildi, yeniden bağlanılıyor…";
+  else if (name === "reconnecting") text = `Yeniden bağlanma denemesi ${data.attempt}/${data.maxAttempts}`;
+  else if (name === "reconnected") text = "Yeniden bağlandı ✅";
+  else if (name === "stream_ended") text = "Canlı yayın sona erdi";
+  else if (name === "connection_failed") text = "Yeniden bağlanılamadı ❌";
+  else if (name === "force_disconnect") text = "Sunucu bağlantıyı kapattı";
+  else if (name === "server_shutdown") text = "Sunucu kapatılıyor";
+  else if (name === "error") text = esc(data.message ?? "Bilinmeyen hata");
+  else if (name === "history") return;
+  else text = esc(JSON.stringify(data).slice(0, 160));
+
+  const head = who ? `<div class="top"><span class="who">${who}</span>${nick ? `<span class="meta">${nick}</span>` : ""}</div>` : "";
+  node.innerHTML = `
+    <div class="ico">${isSys ? "⚙️" : meta.ico}</div>
+    <div class="body">
+      ${head}
+      <div class="txt">${text}</div>
+      ${extra ? `<div class="meta">${extra}</div>` : ""}
+      <div class="meta">${time()} · ${isSys ? "sistem" : meta.label.toLowerCase()}</div>
+    </div>`;
+
+  el.feed.appendChild(node);
+  S.seen++;
+  while (el.feed.children.length > 250) el.feed.removeChild(el.feed.firstChild);
+  if (el.autoScroll.checked) el.feed.scrollTop = el.feed.scrollHeight;
+}
+
+/* ---------- İSTATİSTİKLER ---------- */
+function renderStats(st) {
+  S.stats = st || {};
+  const map = {
+    "s-chat": "chatMessages", "s-gifts": "gifts", "s-diamonds": "diamonds",
+    "s-likes": "likes", "s-follows": "follows", "s-shares": "shares",
+    "s-joins": "joins", "s-viewers": "viewers",
+  };
+  for (const [id, key] of Object.entries(map)) {
+    const node = $(id);
+    if (node) node.textContent = num(S.stats[key] ?? 0);
+  }
+  if (el.stViewers) el.stViewers.textContent = num(S.stats.viewers ?? 0);
+}
+
+/* ---------- LİDERLİK TABLOSU ---------- */
+async function loadLeaderboard(username) {
+  try {
+    const r = await fetch(`/api/leaderboard/${encodeURIComponent(username)}`);
+    if (!r.ok) return;
+    const { leaderboard } = await r.json();
+    if (!leaderboard?.length) {
+      el.board.innerHTML = `<li class="board-empty">Henüz hediye yok</li>`;
+      return;
+    }
+    el.board.innerHTML = leaderboard.map((u, i) => `
+      <li>
+        <span class="rank">${i + 1}</span>
+        <span class="nm">@${esc(u.uniqueId)}</span>
+        <span class="cn">💎 ${num(u.coins)}</span>
+      </li>`).join("");
+  } catch { /* sessiz */ }
+}
+
+/* ---------- SUNUCU DURUMU ---------- */
+async function pollServer() {
+  try {
+    const r = await fetch("/health");
+    const ok = r.ok;
+    el.serverDot.parentElement.className = `server-pill ${ok ? "ok" : "bad"}`;
+    el.serverText.textContent = ok ? "Çevrimiçi" : "Hata";
+    if (ok) {
+      const d = await r.json();
+      el.connInfo.textContent =
+        `Sunucu çevrimiçi · ${d.activeRooms ?? 0} oda · ${d.activeClients ?? 0} istemci · ${num(Math.round((d.uptime ?? 0) / 1000))}s`;
+    }
+  } catch {
+    el.serverDot.parentElement.className = "server-pill bad";
+    el.serverText.textContent = "Kapalı";
+    el.connInfo.textContent = "Sunucuya ulaşılamıyor";
+  }
+}
+
+/* ---------- DURUM ÇUBUĞU ---------- */
+function setStatus(text, cls) {
+  el.stStatus.textContent = text;
+  el.stStatus.style.color = cls || "";
+}
+
+/* ---------- SON KULLANICILAR ---------- */
+function loadRecent() {
+  try { return JSON.parse(localStorage.getItem("tt_recent") || "[]"); } catch { return []; }
+}
+function saveRecent(u) {
+  const list = [u, ...loadRecent().filter((x) => x !== u)].slice(0, 6);
+  try { localStorage.setItem("tt_recent", JSON.stringify(list)); } catch { /* yoksay */ }
+  renderRecent();
+}
+function renderRecent() {
+  const list = loadRecent();
+  el.quick.innerHTML = list.length
+    ? list.map((u) => `<button class="chip" data-u="${esc(u)}">@${esc(u)}</button>`).join("")
+    : `<span class="chip" style="cursor:default">Son aramalar burada görünür</span>`;
+  el.quick.querySelectorAll("[data-u]").forEach((b) => {
+    b.onclick = () => { el.user.value = b.dataset.u; doConnect(); };
+  });
+}
+
+/* ---------- SSE AKIŞI ---------- */
+function closeStream() {
+  if (S.es) { S.es.close(); S.es = null; }
+}
+
+function openStream(username) {
+  closeStream();
+  setStatus("Bağlanıyor…", "var(--warn)");
+
+  const es = new EventSource(`/events/${encodeURIComponent(username)}`);
+  S.es = es;
+
+  es.addEventListener("event", (e) => {
+    let d = {};
+    try { d = JSON.parse(e.data); } catch { /* yoksay */ }
+    const name = d.name;
+    delete d.name;
+
+    if (name === "connected") {
+      setStatus("Canlı", "var(--ok)");
+      if (d.roomId) el.stRoom.textContent = d.roomId;
+      el.disconnect.disabled = false;
+      addEvent("connected", d);
+      loadLeaderboard(username);
+      return;
+    }
+    if (name === "disconnected") setStatus("Koptu", "var(--err)");
+    if (name === "reconnecting") setStatus("Yeniden…", "var(--warn)");
+    if (name === "reconnected") { setStatus("Canlı", "var(--ok)"); addEvent("reconnected", d); return; }
+    if (name === "stream_ended") setStatus("Bitti", "var(--muted)");
+    if (name === "error") setStatus("Hata", "var(--err)");
+    if (name === "room_state") { renderStats(d.stats); if (d.roomId) el.stRoom.textContent = d.roomId; return; }
+    if (name === "history") { (d.events || []).forEach((ev) => addEvent(ev.name, ev)); return; }
+    if (name === "heartbeat") return;
+
+    addEvent(name, d);
+  });
+
+  es.onerror = () => {
+    setStatus("Bağlantı yok", "var(--err)");
+    el.disconnect.disabled = !S.username;
+  };
+}
+
+/* ---------- BAĞLAN / KES ---------- */
+async function doConnect() {
+  const u = el.user.value.trim().replace(/^@+/, "").replace(/\s+/g, "").toLowerCase();
+  if (!u) { el.user.focus(); setStatus("Kullanıcı adı girin", "var(--err)"); return; }
+
+  el.user.value = u;
+  S.username = u;
+  saveRecent(u);
+  setStatus("İstek gönderildi", "var(--warn)");
+
+  try {
+    const r = await fetch("/api/connect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: u }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setStatus("Başarısız", "var(--err)");
+      addEvent("error", { message: d.error || `HTTP ${r.status}` });
+      return;
+    }
+    openStream(u);
+  } catch (err) {
+    setStatus("Ağ hatası", "var(--err)");
+    addEvent("error", { message: String(err?.message || err) });
+  }
+}
+
+async function doDisconnect() {
+  if (!S.username) return;
+  try {
+    await fetch("/api/disconnect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: S.username }),
+    });
+  } catch { /* sessiz */ }
+  closeStream();
+  setStatus("Kesildi", "var(--muted)");
+  el.stRoom.textContent = "—";
+  el.disconnect.disabled = true;
+  addEvent("force_disconnect", {});
+}
+
+/* ---------- OTOMATIK DURUM YOKLAMASI ---------- */
+setInterval(() => {
+  if (!S.username) return;
+  fetch(`/api/status/${encodeURIComponent(S.username)}`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      if (!d) return;
+      renderStats(d.stats);
+      el.stClients.textContent = num(d.clientCount ?? 0);
+      if (d.roomId) el.stRoom.textContent = d.roomId;
+    })
+    .catch(() => {});
+}, 5000);
+
+/* ---------- BAŞLAT ---------- */
+buildFilters();
+renderRecent();
+pollServer();
+setInterval(pollServer, 15000);
+
+el.connect.onclick = doConnect;
+el.disconnect.onclick = doDisconnect;
+el.clear.onclick = () => {
+  el.feed.innerHTML = `<div class="empty" id="feedEmpty">Akış temizlendi. Yeni olaylar bekleniyor…</div>`;
+  S.seen = 0;
+};
+el.user.addEventListener("keydown", (e) => { if (e.key === "Enter") doConnect(); });
+
+// URL'den ?u=kullanici ile otomatik bağlan
+const preset = new URLSearchParams(location.search).get("u");
+if (preset) { el.user.value = preset; doConnect(); }

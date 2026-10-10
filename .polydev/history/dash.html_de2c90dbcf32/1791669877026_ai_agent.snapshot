@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b0e14">
+<title>TikTok Live Panel — /dash</title>
+<link rel="stylesheet" href="/dash.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">TT</span>
+    <div class="brand-text">
+      <strong>TikTok Live Panel</strong>
+      <small>Canlı yayın olay akışı</small>
+    </div>
+  </div>
+  <div class="server-pill" id="serverPill">
+    <span class="dot" id="serverDot"></span>
+    <span id="serverText">Sunucu</span>
+  </div>
+</header>
+<main class="layout" id="layout"></main>
+<footer class="foot"><span id="connInfo">Bağlantı yok</span></footer>
+<script src="/dash.js"></script>
+</body>
+</html>

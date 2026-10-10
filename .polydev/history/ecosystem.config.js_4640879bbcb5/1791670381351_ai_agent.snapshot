@@ -1,0 +1,46 @@
+module.exports = {
+  apps: [
+    {
+      name: 'tiktok-render-streamer',
+      script: 'index.js',
+      instances: 'max',
+      exec_mode: 'cluster',
+      watch: false,
+      max_memory_restart: '500M',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3000,
+        HOST: '127.0.0.1'
+      },
+      env_production: {
+        NODE_ENV: 'production',
+        PORT: 3000,
+        HOST: '127.0.0.1',
+        CLEANUP_TIMEOUT: 300000,
+        MAX_RECONNECT_ATTEMPTS: 3,
+        HEARTBEAT_INTERVAL: 30000,
+        MAX_CONNECTIONS_PER_USER: 5,
+        MAX_TOTAL_ROOMS: 100,
+        RATE_LIMIT_WINDOW_MS: 60000,
+        RATE_LIMIT_MAX_REQUESTS: 100,
+        SSE_RATE_LIMIT_MAX: 30,
+        LOG_LEVEL: 'info',
+        LOG_FILE: 'logs/app.log',
+        COMPRESSION_LEVEL: 6,
+        COMPRESSION_THRESHOLD: 1024
+      },
+      error_file: 'logs/err.log',
+      out_file: 'logs/out.log',
+      log_file: 'logs/combined.log',
+      time: true,
+      merge_logs: true,
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      kill_timeout: 5000,
+      wait_ready: true,
+      listen_timeout: 10000,
+      max_restarts: 10,
+      min_uptime: '10s',
+      restart_delay: 4000
+    }
+  ]
+};

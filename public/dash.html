@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b0e14">
+<title>TikTok Live Panel — /dash</title>
+<link rel="stylesheet" href="/dash.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">TT</span>
+    <div class="brand-text">
+      <strong>TikTok Live Panel</strong>
+      <small>Canlı yayın olay akışı</small>
+    </div>
+  </div>
+  <div class="server-pill" id="serverPill">
+    <span class="dot" id="serverDot"></span>
+    <span id="serverText">Sunucu</span>
+  </div>
+</header>
+<main class="layout" id="layout">
+
+  <section class="card connect-card">
+    <h2 class="card-title">🎥 Canlı Yayına Bağlan</h2>
+    <p class="hint">Kullanıcı adını <code>@</code> ile gir, örn. <code>@elvin_hesenov041</code></p>
+    <div class="input-row">
+      <div class="tag-input">
+        <span class="at">@</span>
+        <input id="username" type="text" autocomplete="off" spellcheck="false"
+               placeholder="elvin_hesenov041" aria-label="TikTok kullanıcı adı">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnConnect">Bağlan</button>
+      <button class="btn btn-ghost" id="btnDisconnect" disabled>Bağlantıyı Kes</button>
+    </div>
+    <div class="quick" id="quickTags"></div>
+    <div class="status-grid">
+      <div class="status-item"><small>Durum</small><strong id="stStatus">—</strong></div>
+      <div class="status-item"><small>Oda ID</small><strong id="stRoom">—</strong></div>
+      <div class="status-item"><small>İzleyici</small><strong id="stViewers">0</strong></div>
+      <div class="status-item"><small>İstemci</small><strong id="stClients">0</strong></div>
+    </div>
+  </section>
+
+  <section class="card stats-card">
+    <h2 class="card-title">📊 Canlı İstatistikler</h2>
+    <div class="stat-grid">
+      <div class="stat"><b id="s-chat">0</b><span>💬 Sohbet</span></div>
+      <div class="stat"><b id="s-gifts">0</b><span>🎁 Hediye</span></div>
+      <div class="stat"><b id="s-diamonds">0</b><span>💎 Elmas</span></div>
+      <div class="stat"><b id="s-likes">0</b><span>❤️ Beğeni</span></div>
+      <div class="stat"><b id="s-follows">0</b><span>➕ Takip</span></div>
+      <div class="stat"><b id="s-shares">0</b><span>🔗 Paylaşım</span></div>
+      <div class="stat"><b id="s-joins">0</b><span>🚪 Katılım</span></div>
+      <div class="stat"><b id="s-viewers">0</b><span>👀 İzleyici</span></div>
+    </div>
+  </section>
+
+  <section class="card feed-card">
+    <div class="feed-head">
+      <h2 class="card-title">⚡ Olay Akışı</h2>
+      <div class="feed-tools">
+        <label class="switch"><input type="checkbox" id="autoScroll" checked><span>Otomatik</span></label>
+        <button class="btn btn-mini" id="btnClear">Temizle</button>
+      </div>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="feed" id="feed" aria-live="polite">
+      <div class="empty" id="feedEmpty">Henüz olay yok. Bağlanmak için bir kullanıcı adı gir.</div>
+    </div>
+  </section>
+
+  <section class="card board-card">
+    <h2 class="card-title">🏆 Hediye Liderlik Tablosu</h2>
+    <ol class="board" id="board"><li class="board-empty">Veri bekleniyor…</li></ol>
+  </section>
+
+</main>
+<footer class="foot"><span id="connInfo">Bağlantı yok</span></footer>
+<script src="/dash.js"></script>
+</body>
+</html>
