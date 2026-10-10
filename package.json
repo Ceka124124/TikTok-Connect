@@ -1,4 +1,5 @@
 <<<<<<< LOCAL (Your changes)
+<<<<<<< LOCAL (Your changes)
 {
   "name": "tiktok-render-streamer",
   "version": "3.0.0",
@@ -105,5 +106,9 @@
     "url": "https://github.com/yourusername/tiktok-render-streamer"
   }
 }
+
+>>>>>>> REMOTE (Changes from GitHub)
+
+=======
 
 >>>>>>> REMOTE (Changes from GitHub)
